@@ -1,0 +1,57 @@
+cabal-version:      2.4
+name:               simple-telegram-bot
+version:            0.1.0.0
+synopsis:
+
+-- A longer description of the package.
+-- description:
+homepage:           ahaxu.com
+
+-- A URL where users can report bugs.
+-- bug-reports:
+license:            MIT
+license-file:       LICENSE
+author:             lk
+maintainer:         lk@ahaxu.com
+
+-- A copyright notice.
+-- copyright:
+category:           Web
+extra-source-files: CHANGELOG.md
+
+library
+    exposed-modules:  Ema
+
+    -- Modules included in this library but not exported.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:
+          base ^>=4.14.3.0
+        , http-conduit == 2.3.8
+        , bytestring == 0.10.12.0
+        , aeson == 2.0.2.0
+        , yaml == 0.11.7.0
+        , http-client == 0.7.9
+        , http-client-tls == 0.3.5.3
+        , http-types == 0.12.3
+
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+executable simple-telegram-bot
+    main-is:          Main.hs
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:
+          base ^>=4.14.3.0
+        , simple-telegram-bot
+
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
