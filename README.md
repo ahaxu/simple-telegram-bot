@@ -46,6 +46,6 @@ cabal run simple-telegram-bot "BTC/USDT" "1h" 24 1
 ### Run bash script
 link to [ema.sh](./scripts/ema.sh) file
 ```
-# need to export env variables as upper step
+# need to export env variables as above step
 ./scripts/ema.sh "BTC/USDT" "1h" 12 2
 ```
