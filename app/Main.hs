@@ -1,7 +1,9 @@
 module Main where
 
-import Ema (getEma, handleEma, sendToTelegram)
+import EmaImproved (justDoIt)
 import System.Environment (getArgs)
+import Control.Monad.Trans.Except
+
 
 main :: IO ()
 main = do
@@ -11,15 +13,9 @@ main = do
   let interval = args!!1
   let backtracks = read $ args!!2 :: Int
   let threshold = read $ args !!3 :: Float
-  candles <- getEma symbol interval backtracks
-  case candles of
+
+  result <- runExceptT $ justDoIt symbol interval backtracks threshold
+  case result of
     Left e -> print e
-    Right cdls -> do
-        handler <- handleEma symbol threshold cdls
-        case handler of
-            Left e -> print e
-            Right msg -> do
-                rs <- sendToTelegram msg
-                case rs of
-                    Left e -> print e
-                    Right telegramRes -> print $ show telegramRes
+    Right msg -> print msg
+
