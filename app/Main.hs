@@ -7,7 +7,6 @@ import Control.Monad.Trans.Except
 
 main :: IO ()
 main = do
-  -- todo pass through arg
   args <- getArgs
   let symbol = args!!0
   let interval = args!!1
