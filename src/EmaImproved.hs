@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE  DeriveGeneric #-}
 
-module EmaImproved
-where
+module EmaImproved where
 
 import           Data.Aeson
                     ( Value
@@ -54,38 +53,34 @@ getEma ::
     -> String
     -> Int
     -> ExceptT MyException IO Candles
-getEma symbol interval backtracks = ExceptT $ do
-    secret <- try $ getEnv "TA_API_KEY"
-    case secret of
-        Left e -> return $ Left e
-        Right key -> do
-            let params =
-                    [ ("secret", Just $ S8.pack key)
-                    , ("exchange", Just "binance")
-                    , ("symbol", Just $ S8.pack symbol)
-                    , ("interval", Just $ S8.pack interval)
-                    , ("backtracks", Just $ S8.pack $ show backtracks)
-                    ]
-
-                request =
-                      setRequestPath "/ema"
-                    $ setRequestHost "api.taapi.io"
-                    $ setRequestMethod "GET"
-                    $ setRequestQueryString params
-                    $ setRequestSecure True
-                    $ setRequestPort 443
-                    $ defaultRequest
-
-            response <- try $ httpJSON request
-            case response of
-                Left err -> return $ Left err
-                Right r ->  return $
-                    if statusCode == 200
-                        then Right $ getResponseBody r
-                        else Left $ MyException $ L8.unpack $ encode rBody
-                    where
-                        statusCode = getResponseStatusCode r
-                        rBody = getResponseBody r :: Candles
+getEma symbol interval backtracks = do
+    key <-  lift $ getEnv "TA_API_KEY"
+    ExceptT $ do
+        let params =
+                [ ("secret", Just $ S8.pack key)
+                , ("exchange", Just "binance")
+                , ("symbol", Just $ S8.pack symbol)
+                , ("interval", Just $ S8.pack interval)
+                , ("backtracks", Just $ S8.pack $ show backtracks)
+                ]
+            request =
+                  setRequestPath "/ema"
+                $ setRequestHost "api.taapi.io"
+                $ setRequestMethod "GET"
+                $ setRequestQueryString params
+                $ setRequestSecure True
+                $ setRequestPort 443
+                $ defaultRequest
+        response <- try $ httpJSON request
+        case response of
+            Left err -> return $ Left err
+            Right r ->  return $
+                if statusCode == 200
+                    then Right $ getResponseBody r
+                    else Left $ MyException $ L8.unpack $ encode rBody
+                where
+                    statusCode = getResponseStatusCode r
+                    rBody = getResponseBody r :: Candles
 
 data TelegramMessage = TelegramMessage
     {
@@ -97,7 +92,6 @@ data TelegramMessage = TelegramMessage
         , firstCandleValue :: Float
         , lastCandleValue :: Float
     } deriving(Show)
-
 
 handleEma ::
     String
@@ -136,7 +130,6 @@ handleEma symbol threshold cdls = ExceptT $ do
                 , lastCandleValue=lastCandleValue
                 }
 
-
 data TelegramResponseData= TelegramResponseData
     {
           ok :: Bool
@@ -146,48 +139,39 @@ data TelegramResponseData= TelegramResponseData
 instance FromJSON TelegramResponseData
 instance ToJSON TelegramResponseData
 
-
 sendToTelegram ::
        String
     -> ExceptT MyException IO TelegramResponseData
-sendToTelegram msg = ExceptT $ do
-    keyEnv <- try $ getEnv "TELEGRAM_BOT_KEY"
-    case keyEnv of
-        Left e -> return $ Left e
-        Right key -> do
-            chatIDEnv <- try $ getEnv "CHAT_ID"
-            case chatIDEnv of
-                Left e -> return $ Left e
-                Right chatID -> do
-                    let params =
-                            [ ("chat_id", Just $ S8.pack chatID)
-                            , ("text", Just $ S8.pack msg)
-                            ]
-                        requestPath = S8.pack $ "/" ++ key ++ "/sendmessage"
-                        request =
-                              setRequestMethod "GET"
-                            $ setRequestHost "api.telegram.org"
-                            $ setRequestPath requestPath
-                            $ setRequestQueryString params
-                            $ setRequestSecure True
-                            $ setRequestPort 443
-                            $ defaultRequest
-
-                    response <- try $ httpJSON request
-
-                    case response of
-                        Left err -> return $ Left err
-                        Right r ->  return $
-                            if statusCode == 200
-                                then Right $ getResponseBody r
-                                else Left $ MyException $ L8.unpack $ encode rBody
-                            where
-                                statusCode = getResponseStatusCode r
-                                rBody = getResponseBody r :: TelegramResponseData
-
+sendToTelegram msg = do
+    telegramKey <- lift $ getEnv "TELEGRAM_BOT_KEY"
+    telegramChatID <- lift $ getEnv "CHAT_ID"
+    let params =
+            [ ("chat_id", Just $ S8.pack telegramChatID)
+            , ("text", Just $ S8.pack msg)
+            ]
+        requestPath = S8.pack $ "/" ++ telegramKey ++ "/sendmessage"
+        request =
+              setRequestMethod "GET"
+            $ setRequestHost "api.telegram.org"
+            $ setRequestPath requestPath
+            $ setRequestQueryString params
+            $ setRequestSecure True
+            $ setRequestPort 443
+            $ defaultRequest
+    ExceptT $ do
+        response <- try $ httpJSON request
+        case response of
+            Left err -> return $ Left err
+            Right r ->  return $
+                if statusCode == 200
+                    then Right $ getResponseBody r
+                    else Left $ MyException $ L8.unpack $ encode rBody
+                where
+                    statusCode = getResponseStatusCode r
+                    rBody = getResponseBody r :: TelegramResponseData
 
 justDoIt ::
-    String
+       String
     -> String
     -> Int
     -> Float
